@@ -5,6 +5,11 @@ bitscrub walks a directory tree and writes/updates/verifies the CRC32C of each f
 
 `(time_marked, mtime, checksum)` data is stored in the `user._C` xattr.
 
+Modified
+---
+
+Modifed (jpl) to use zlib.crc32, which appears to work on arm. 
+Previously was using pycrc32c library, which called a sse4 instruction.
 
 Basic usage
 ---
@@ -27,6 +32,10 @@ Inspect checksum xattr:
 
     bitscrub -i FILENAME
 
+
+Typical usage (this prints any files that were modified, and silently adds checksums to any new files):
+
+    bitscrub -wvq ~/
 
 --help
 ---

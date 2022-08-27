@@ -22,5 +22,5 @@ setup(
 	],
 	packages=["bitscrub"],
 	scripts=["bin/bitscrub"],
-	install_requires=["pycrc32c", "xattr", "cffi", "Twisted"]
+	install_requires=["xattr", "Twisted"]	# removed: "pycrc32c", "cffi", 
 )

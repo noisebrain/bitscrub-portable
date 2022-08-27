@@ -23,15 +23,47 @@ import datetime
 import functools
 import operator
 import argparse
-from cffi import FFI
-ffi = FFI()
-from _crc32c.lib import sse4_crc32c
 import xattr
 from twisted.python.filepath import FilePath, LinkError
 
 
 XATTR_NAME = b"user._C"
 VERSION = bytes([11])
+
+
+import zlib
+
+def crc32c_for_file(f):
+	chunksize = 8192
+	file_hash = 0
+	chunk = f.read(chunksize)
+	while chunk:
+		file_hash = zlib.crc32(chunk, file_hash)
+		chunk = f.read(chunksize)
+	return file_hash
+
+
+""" original Intel specific version:
+
+from cffi import FFI
+ffi = FFI()
+
+from _crc32c.lib import sse4_crc32c
+
+_block_size   = 64 * 1024
+# We have single-threaded operation, so we can use the same block of memory
+_crc32c_mem   = ffi.new('char[%d]' % _block_size)
+_crc32c_array = ffi.buffer(_crc32c_mem)
+
+def crc32c_for_file(h):
+	c = 0
+	while True:
+		num_bytes_read = h.readinto(_crc32c_array)
+		if num_bytes_read == 0:
+			break
+		c = sse4_crc32c(c, _crc32c_mem, num_bytes_read)
+	return c
+"""
 
 
 class ChecksumData(tuple):
@@ -86,21 +118,6 @@ def decode_body(body):
 	checksum = struct.unpack("<I", body[pos:pos + 4])[0]
 	pos += 4
 	return ChecksumData(time_marked, mtime, checksum)
-
-
-_block_size   = 64 * 1024
-# We have single-threaded operation, so we can use the same block of memory
-_crc32c_mem   = ffi.new('char[%d]' % _block_size)
-_crc32c_array = ffi.buffer(_crc32c_mem)
-
-def crc32c_for_file(h):
-	c = 0
-	while True:
-		num_bytes_read = h.readinto(_crc32c_array)
-		if num_bytes_read == 0:
-			break
-		c = sse4_crc32c(c, _crc32c_mem, num_bytes_read)
-	return c
 
 
 def set_checksum(h, verbose):
@@ -363,6 +380,8 @@ def main():
 
 	--verify, --write, and --inspect can be combined.  If none of these are
 	specified, files will be checked only for lack of checksum data or updated mtime.
+
+        typical usage:  bitscrub -wvq <dir> 
 	""" % (XATTR_NAME,))
 
 	parser.add_argument('path', metavar='PATH', type=str, nargs='+',
