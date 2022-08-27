@@ -33,9 +33,13 @@ Inspect checksum xattr:
     bitscrub -i FILENAME
 
 
-Typical usage (this prints any files that were modified or corrupted, and silently adds checksums to any new files):
+Typical usage 
+---
 
-    bitscrub -wvq ~/
+This prints any files that are modified or corrupt, updates their checksums,
+and silently adds checksums to any new files). Look in partciular for "CORRUPT".
+
+    bitscrub -vwq ~/
 
 --help
 ---
