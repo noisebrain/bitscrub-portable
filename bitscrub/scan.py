@@ -245,8 +245,9 @@ def verify_or_set_checksum(h, f, fstat, verify, write, inspect, verbose, listing
 		write_to_stdout("INSPECT\t%r" % (h.name,))
 		write_to_stdout("#\t%s" % (body.get_description() if body else repr(body),))
 	if body is None:
-		if verbose:
-			write_to_stderr("NEW\t%r" % (h.name,))
+		# always report new files
+		# if verbose:
+		write_to_stderr("NEW\t%r" % (h.name,))
 		if write:
 			wrote_checksum = set_checksum(h, verbose)
 	else:
