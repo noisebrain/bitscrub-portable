@@ -33,6 +33,7 @@ VERSION = bytes([11])
 
 import zlib
 
+
 def crc32c_for_file(f):
 	chunksize = 8192
 	file_hash = 0
@@ -246,13 +247,13 @@ def verify_or_set_checksum(h, f, fstat, verify, write, inspect, verbose, listing
 		write_to_stdout("#\t%s" % (body.get_description() if body else repr(body),))
 	if body is None:
 		# always report new files
-		# if verbose:
-		write_to_stderr("NEW\t%r" % (h.name,))
+		# if verbose: write_to_stderr("NEW\t%r" % (h.name,))
+		write_to_stderr("new\t%r" % (h.name,))
 		if write:
 			wrote_checksum = set_checksum(h, verbose)
 	else:
 		if body.mtime != fstat.st_mtime:
-			write_to_both_if_verbose("MODIFIED\t%r" % (h.name,), verbose)
+			write_to_both_if_verbose("modified\t%r" % (h.name,), verbose)
 			if write:
 				# Existing checksum is probably obsolete, so just
 				# set new checksum.
@@ -267,7 +268,7 @@ def verify_or_set_checksum(h, f, fstat, verify, write, inspect, verbose, listing
 					write_to_both_if_verbose("CORRUPT\t%r" % (h.name,), verbose)
 				else:
 					if verbose:
-						write_to_stderr("VERIFIED\t%r" % (h.name,))
+						write_to_stderr("verified\t%r" % (h.name,))
 
 	if wrote_checksum is not None:
 		return wrote_checksum
@@ -312,16 +313,6 @@ class BetterFilePath(FilePath):
 BetterFilePath.clonePath = BetterFilePath
 
 
-def should_descend(verbose, f):
-	# Don't descend symlinks
-	if f.islink():
-		return False
-	try:
-		f.listdir()
-	except OSError: # A "Permission denied" error, usually
-		write_to_both_if_verbose("NOLISTDIR\t%r" % (f.path,), verbose)
-		return False
-	return True
 
 
 # (st_dev, st_ino) -> crc32c
@@ -403,6 +394,8 @@ def main():
 			"dentry type, CRC32C, mtime, size, filename)")
 	parser.add_argument('-n', '--normalize-listing', dest='normalize_listing', action='store_true',
 		default=False, help="print relative path")
+	parser.add_argument('-e', '--exclude-paths', dest='exclude_paths', type=str,
+		default=None, help="folders to exclude, on separate lines")
 
 	args = parser.parse_args()
 	kwargs = dict(
@@ -421,12 +414,40 @@ def main():
 		raise RuntimeError("Can't print normalized listing because "
 			"more than one path was given: %r" % (args.path,))
 
+	if args.exclude_paths != None:
+		with open(args.exclude_paths) as fin:
+			exclude_paths = fin.read().split()
+		print("exclude_paths:", exclude_paths)
+		exclude_paths = list(map(BetterFilePath, exclude_paths))
+	else:
+		exclude_paths = None
+
+	# capture exclude_paths variable
+	def should_descend_exclude(verbose, f):
+
+	        # Don't descend symlinks
+		if f.islink():
+			return False
+
+		try:
+			f.listdir()
+		except OSError: # A "Permission denied" error, usually
+			write_to_both_if_verbose("NOLISTDIR\t%r" % (f.path,), verbose)
+			return False
+
+		if f in exclude_paths:
+			write_to_stderr("EXCLUDING\t%r" % (f.path,))
+			return False
+			
+		return True
+
+
 	for fname in args.path:
 		p = BetterFilePath(fname)
 		print(p)
 
 		if p.isdir():
-			for f in p.walk(descend=functools.partial(should_descend, args.verbose)):
+			for f in p.walk(descend=functools.partial(should_descend_exclude, args.verbose)):
 				assert isinstance(f, BetterFilePath), type(f)
 				if f == p:
 					continue

@@ -32,6 +32,9 @@ Inspect checksum xattr:
 
     bitscrub -i FILENAME
 
+Specify an exclude file, which should contain folders to exclude separated by whitespace (e.g. one per line): 
+
+    bitscrub -vw -e ~/myexcludefile ~/ 
 
 Typical usage 
 ---
