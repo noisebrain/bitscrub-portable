@@ -395,7 +395,7 @@ def main():
 	parser.add_argument('-n', '--normalize-listing', dest='normalize_listing', action='store_true',
 		default=False, help="print relative path")
 	parser.add_argument('-e', '--exclude-paths', dest='exclude_paths', type=str,
-		default=None, help="folders to exclude, on separate lines")
+		default=None, help="folders to exclude, on separate lines of this file")
 
 	args = parser.parse_args()
 	kwargs = dict(
@@ -435,7 +435,7 @@ def main():
 			write_to_both_if_verbose("NOLISTDIR\t%r" % (f.path,), verbose)
 			return False
 
-		if f in exclude_paths:
+		if (exclude_paths != None) and (f in exclude_paths):
 			write_to_stderr("EXCLUDING\t%r" % (f.path,))
 			return False
 			
